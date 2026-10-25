@@ -1,0 +1,29 @@
+{
+  "name": "hadron-collider",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A physics-driven WebGL proton-proton collider: counter-rotating beams steered by simulated magnets, real relativistic kinematics, and event generation grounded in Particle Data Group values.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "physics",
+    "particle-physics",
+    "hadron-collider",
+    "webgl",
+    "threejs",
+    "simulation"
+  ],
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "vite": "^8.3.5"
+  }
+}

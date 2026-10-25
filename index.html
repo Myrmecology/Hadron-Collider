@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A physics-driven WebGL proton-proton collider. Counter-rotating beams are steered by simulated magnets and collide with relativistic kinematics grounded in Particle Data Group values."
+    />
+    <meta name="theme-color" content="#04060b" />
+    <meta name="color-scheme" content="dark" />
+
+    <title>Hadron Collider — Proton–Proton Collision Facility</title>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
+    />
+
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+
+  <body>
+    <noscript>
+      <div class="noscript">
+        Hadron Collider requires JavaScript and WebGL2 to run the simulation.
+      </div>
+    </noscript>
+
+    <div id="app" class="app">
+      <!-- ================================================================
+           3D viewport — the WebGL renderer draws the ring, detector,
+           beams, and collision tracks into this canvas.
+           ================================================================ -->
+      <canvas id="collider-canvas" class="viewport" aria-label="3D view of the collider ring and detector"></canvas>
+
+      <!-- ================================================================
+           Boot sequence — shown while the lattice and scene initialize.
+           ================================================================ -->
+      <div id="boot-screen" class="boot-screen" role="status" aria-live="polite">
+        <div class="boot-screen__inner">
+          <div class="boot-screen__title">HADRON COLLIDER</div>
+          <ol id="boot-log" class="boot-screen__log"></ol>
+          <div class="boot-screen__bar"><span id="boot-progress"></span></div>
+        </div>
+      </div>
+
+      <!-- ================================================================
+           Header — facility identity, system state, UTC clock.
+           ================================================================ -->
+      <header class="hud-header">
+        <div class="hud-header__brand">
+          <svg class="hud-header__mark" viewBox="0 0 32 32" aria-hidden="true">
+            <circle cx="16" cy="16" r="12" fill="none" stroke="currentColor" stroke-width="1.5" />
+            <circle cx="16" cy="16" r="7" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5" />
+            <circle cx="16" cy="4" r="2" fill="currentColor" />
+          </svg>
+          <div>
+            <h1 class="hud-header__title">Hadron Collider</h1>
+            <p class="hud-header__subtitle">Proton–Proton Collision Facility · Interaction Point 1</p>
+          </div>
+        </div>
+
+        <div class="hud-header__meta">
+          <span id="system-status" class="status" data-state="standby">STANDBY</span>
+          <time id="utc-clock" class="hud-header__clock">--:--:-- UTC</time>
+          <button id="info-open" class="btn btn--ghost" type="button">Physics Reference</button>
+        </div>
+      </header>
+
+      <!-- ================================================================
+           Left panel — accelerator controls and live beam telemetry.
+           ================================================================ -->
+      <aside class="panel panel--left" aria-label="Accelerator controls and beam telemetry">
+        <section class="panel__section">
+          <h2 class="panel__title">Beam Control</h2>
+
+          <label class="switch" for="collider-toggle">
+            <input id="collider-toggle" type="checkbox" role="switch" aria-describedby="collider-toggle-hint" />
+            <span class="switch__track" aria-hidden="true"><span class="switch__thumb"></span></span>
+            <span class="switch__label">Activate Collider</span>
+          </label>
+          <p id="collider-toggle-hint" class="panel__hint">
+            Injects counter-rotating proton beams, ramps them with RF cavities, then steers them into collision at IP1.
+          </p>
+        </section>
+
+        <section class="panel__section">
+          <h2 class="panel__title">
+            Time Scale
+            <output id="time-scale-readout" for="time-scale" class="panel__value">1.00×</output>
+          </h2>
+          <input
+            id="time-scale"
+            class="slider"
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            value="100"
+            aria-describedby="time-scale-hint"
+          />
+          <div class="slider__scale" aria-hidden="true">
+            <span>10⁻⁴</span><span>10⁻³</span><span>10⁻²</span><span>10⁻¹</span><span>1</span>
+          </div>
+          <p id="time-scale-hint" class="panel__hint">
+            Scales the physics clock itself. Lower values slow every particle, decay, and track.
+          </p>
+        </section>
+
+        <section class="panel__section">
+          <h2 class="panel__title">
+            Beam Energy
+            <output id="beam-energy-readout" for="beam-energy" class="panel__value">6.80 TeV</output>
+          </h2>
+          <input
+            id="beam-energy"
+            class="slider"
+            type="range"
+            min="0.45"
+            max="7"
+            step="0.05"
+            value="6.8"
+            aria-describedby="beam-energy-hint"
+          />
+          <div class="slider__scale" aria-hidden="true">
+            <span>0.45 inj.</span><span>6.8 Run 3</span><span>7.0 design</span>
+          </div>
+          <p id="beam-energy-hint" class="panel__hint">
+            Energy per beam. Collision energy √s = <output id="sqrt-s-readout">13.6 TeV</output>
+          </p>
+        </section>
+
+        <section class="panel__section">
+          <h2 class="panel__title">Event Weighting</h2>
+          <label class="switch switch--small" for="rare-enhance">
+            <input id="rare-enhance" type="checkbox" role="switch" aria-describedby="rare-enhance-hint" />
+            <span class="switch__track" aria-hidden="true"><span class="switch__thumb"></span></span>
+            <span class="switch__label">Enhance rare processes</span>
+          </label>
+          <p id="rare-enhance-hint" class="panel__hint">
+            Teaching aid. At true odds a Higgs boson appears in roughly one of every few billion collisions.
+          </p>
+        </section>
+
+        <section class="panel__section">
+          <h2 class="panel__title">Camera</h2>
+          <div id="camera-views" class="segmented" role="group" aria-label="Camera view">
+            <button class="segmented__btn is-active" type="button" data-view="ring">Ring</button>
+            <button class="segmented__btn" type="button" data-view="follow">Follow Beam</button>
+            <button class="segmented__btn" type="button" data-view="ip">Detector</button>
+          </div>
+        </section>
+
+        <section class="panel__section">
+          <h2 class="panel__title">Beam Telemetry</h2>
+          <table class="telemetry">
+            <thead>
+              <tr><th scope="col"></th><th scope="col">Beam 1 ⟳</th><th scope="col">Beam 2 ⟲</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">E</th><td id="b1-energy">—</td><td id="b2-energy">—</td></tr>
+              <tr><th scope="row">γ</th><td id="b1-gamma">—</td><td id="b2-gamma">—</td></tr>
+              <tr><th scope="row">β = v/c</th><td id="b1-beta">—</td><td id="b2-beta">—</td></tr>
+              <tr><th scope="row">Turns</th><td id="b1-turns">0</td><td id="b2-turns">0</td></tr>
+            </tbody>
+          </table>
+          <dl class="telemetry-list">
+            <div><dt>Dipole field</dt><dd id="dipole-field">—</dd></div>
+            <div><dt>RF voltage</dt><dd id="rf-voltage">—</dd></div>
+            <div><dt>Sim. time</dt><dd id="sim-time">0.000 µs</dd></div>
+          </dl>
+        </section>
+      </aside>
+
+      <!-- ================================================================
+           Right panel — the most recent collision event.
+           ================================================================ -->
+      <aside class="panel panel--right" aria-label="Collision event display">
+        <section class="panel__section">
+          <h2 class="panel__title">Event Display</h2>
+          <dl class="event-meta">
+            <div><dt>Run</dt><dd id="event-run">—</dd></div>
+            <div><dt>Event</dt><dd id="event-number">—</dd></div>
+          </dl>
+        </section>
+
+        <section class="panel__section" aria-live="polite">
+          <h3 class="panel__subtitle">Hard Process</h3>
+          <p id="event-process" class="event-process">Awaiting collision…</p>
+          <dl class="event-meta">
+            <div><dt>Partons</dt><dd id="event-partons">—</dd></div>
+            <div><dt>√ŝ</dt><dd id="event-sqrt-shat">—</dd></div>
+            <div><dt>Multiplicity</dt><dd id="event-multiplicity">—</dd></div>
+            <div><dt>Missing E<sub>T</sub></dt><dd id="event-met">—</dd></div>
+          </dl>
+        </section>
+
+        <section class="panel__section panel__section--grow">
+          <h3 class="panel__subtitle">Final-State Particles</h3>
+          <ul id="event-particles" class="particle-list"></ul>
+        </section>
+
+        <section class="panel__section">
+          <h3 class="panel__subtitle">Decay Chain</h3>
+          <ol id="event-decays" class="decay-chain"></ol>
+        </section>
+      </aside>
+
+      <!-- ================================================================
+           Legend — track color coding used by the detector display.
+           ================================================================ -->
+      <footer class="legend" aria-label="Track legend">
+        <span class="legend__item"><i class="legend__swatch legend__swatch--photon"></i>Photon γ</span>
+        <span class="legend__item"><i class="legend__swatch legend__swatch--electron"></i>Electron e±</span>
+        <span class="legend__item"><i class="legend__swatch legend__swatch--muon"></i>Muon μ±</span>
+        <span class="legend__item"><i class="legend__swatch legend__swatch--charged"></i>Charged hadron</span>
+        <span class="legend__item"><i class="legend__swatch legend__swatch--neutral"></i>Neutral hadron</span>
+        <span class="legend__item"><i class="legend__swatch legend__swatch--met"></i>Missing E<sub>T</sub> (ν)</span>
+      </footer>
+
+      <!-- ================================================================
+           Physics reference — hadrons, leptons, quarks, gluons, bosons.
+           Content is generated from src/content/science.js.
+           ================================================================ -->
+      <dialog id="info-panel" class="info-panel" aria-labelledby="info-title">
+        <div class="info-panel__header">
+          <h2 id="info-title" class="info-panel__title">Physics Reference</h2>
+          <button id="info-close" class="btn btn--ghost" type="button" aria-label="Close physics reference">✕</button>
+        </div>
+        <div class="info-panel__body">
+          <nav id="info-nav" class="info-panel__nav" aria-label="Reference topics"></nav>
+          <article id="info-content" class="info-panel__content"></article>
+        </div>
+      </dialog>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

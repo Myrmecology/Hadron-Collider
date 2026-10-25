@@ -1,0 +1,193 @@
+# ==============================================================================
+#  HADRON COLLIDER — .gitignore
+#  Keeps secrets, cryptographic key material, build output, and system clutter
+#  out of version control. Review before committing anything unusual.
+# ==============================================================================
+
+
+# ------------------------------------------------------------------------------
+#  Dependencies
+# ------------------------------------------------------------------------------
+node_modules/
+.pnpm-store/
+.yarn/
+.npm/
+
+
+# ------------------------------------------------------------------------------
+#  Build output & caches (Vite)
+# ------------------------------------------------------------------------------
+dist/
+dist-ssr/
+build/
+.vite/
+.cache/
+*.local
+*.tsbuildinfo
+coverage/
+
+
+# ------------------------------------------------------------------------------
+#  Environment variables & general secrets
+# ------------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.secret
+*.secrets
+secrets/
+.secrets/
+credentials.json
+*credentials*
+*.token
+.netrc
+.npmrc
+
+
+# ------------------------------------------------------------------------------
+#  SSH key material
+#  Never commit private keys. Hardware-backed (YubiKey FIDO2) SSH keys
+#  use the "-sk" suffix and are covered below.
+# ------------------------------------------------------------------------------
+.ssh/
+id_rsa
+id_rsa*
+id_dsa
+id_dsa*
+id_ecdsa
+id_ecdsa*
+id_ed25519
+id_ed25519*
+id_ecdsa_sk
+id_ecdsa_sk*
+id_ed25519_sk
+id_ed25519_sk*
+*_sk
+*_sk.pub
+known_hosts
+known_hosts.old
+authorized_keys
+ssh_config
+*.ppk
+
+
+# ------------------------------------------------------------------------------
+#  GPG / OpenPGP key material
+#  Covers keyrings, exported private keys, revocation certificates,
+#  and agent configuration.
+# ------------------------------------------------------------------------------
+.gnupg/
+*.gpg
+*.pgp
+*.kbx
+*.kbx~
+secring.*
+pubring.*
+trustdb.gpg
+random_seed
+private-keys-v1.d/
+openpgp-revocs.d/
+*secret*.asc
+*private*.asc
+*-secret-key*
+*-private-key*
+*revoke*.asc
+*revocation*
+gpg-agent.conf
+scdaemon.conf
+sshcontrol
+
+
+# ------------------------------------------------------------------------------
+#  YubiKey & hardware token artifacts
+#  PIV certificates, PIN/PUK/management-key backups, OTP/OATH exports,
+#  and recovery codes.
+# ------------------------------------------------------------------------------
+*.ykpers
+*yubikey*
+*yubico*
+*ykman*
+*piv*
+*.pin
+*.puk
+*pin*.txt
+*puk*.txt
+*management-key*
+*mgmt-key*
+*oath*
+*otp-secret*
+*recovery-code*
+*recovery_code*
+*backup-code*
+*backup_code*
+
+
+# ------------------------------------------------------------------------------
+#  Certificates & generic private keys
+# ------------------------------------------------------------------------------
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.der
+*.csr
+*.crt
+*.cer
+
+
+# ------------------------------------------------------------------------------
+#  Logs & debug output
+# ------------------------------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# ------------------------------------------------------------------------------
+#  Editors & IDEs
+#  Share recommended VS Code extensions; keep personal settings private.
+# ------------------------------------------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+
+
+# ------------------------------------------------------------------------------
+#  Operating system files
+# ------------------------------------------------------------------------------
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+.directory
+.Trash-*
+
+
+# ------------------------------------------------------------------------------
+#  Temporary & backup files
+# ------------------------------------------------------------------------------
+tmp/
+temp/
+*.tmp
+*.bak
+*.orig
