@@ -90,9 +90,13 @@ const PATH_IP1 = MagnetLattice.wrap(0 - S_INJECT_BEAM2);
 /** Path length σ at which Beam 2 passes the RF cavities at Point 4. */
 const PATH_RF = MagnetLattice.wrap(RFCavity.POSITION_S - S_INJECT_BEAM2);
 
-/** Smallest path ≥ current that is ≡ offset (mod C). */
+/**
+ * Next path position ≡ offset (mod C) strictly ahead of `path`.
+ * An event at the current position counts as already passed, so the
+ * machine always advances to the following lap.
+ */
 function nextPathAt(path, offset) {
-  const k = Math.ceil((path - offset) / C - 1e-12);
+  const k = Math.floor((path - offset) / C + 1e-9) + 1;
   return offset + Math.max(0, k) * C;
 }
 

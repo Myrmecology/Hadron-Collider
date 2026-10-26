@@ -172,7 +172,7 @@ export const SIMULATION = Object.freeze({
   /** Time-scale slider range (dimensionless multiplier on the physics clock). */
   TIME_SCALE_MIN: 1e-9,
   TIME_SCALE_MAX: 1,
-  TIME_SCALE_DEFAULT: 1,
+  TIME_SCALE_DEFAULT: 1e-4,
 
   /**
    * While beams circulate the ring, the clock never runs slower than this,

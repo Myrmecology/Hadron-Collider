@@ -388,6 +388,7 @@ sub {
 }
 
 .panel__section {
+  flex-shrink: 0;
   padding: 14px 16px;
   border-bottom: 1px solid var(--divider);
 }
@@ -397,8 +398,12 @@ sub {
 }
 
 .panel__section--grow {
-  flex: 1 1 auto;
-  min-height: 120px;
+  flex: 1 1 0;
+  min-height: 160px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--panel-border) transparent;
 }
 
 .panel__title {
@@ -694,18 +699,23 @@ sub {
 .event-meta > div {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   gap: 12px;
 }
 
 .telemetry-list dt,
 .event-meta dt {
+  flex: none;
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .telemetry-list dd,
 .event-meta dd {
+  min-width: 0;
   color: var(--text);
   text-align: right;
+  overflow-wrap: anywhere;
 }
 
 /* -----------------------------------------------------------------------------
@@ -741,7 +751,7 @@ sub {
 .particle-row {
   --kind-color: var(--text-muted);
   display: grid;
-  grid-template-columns: 10px 44px 1fr auto;
+  grid-template-columns: 10px minmax(44px, max-content) minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   padding: 3px 6px;
@@ -773,6 +783,7 @@ sub {
 .particle-row__symbol {
   color: var(--text);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .particle-row__name {
@@ -803,6 +814,7 @@ sub {
 .decay-chain li {
   padding-left: 12px;
   border-left: 1px solid var(--panel-border-strong);
+  overflow-wrap: anywhere;
 }
 
 /* -----------------------------------------------------------------------------

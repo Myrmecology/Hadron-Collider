@@ -68,6 +68,7 @@
         <div class="hud-header__meta">
           <span id="system-status" class="status" data-state="standby">STANDBY</span>
           <time id="utc-clock" class="hud-header__clock">--:--:-- UTC</time>
+          <button id="sound-toggle" class="btn btn--ghost" type="button" aria-pressed="true">Sound On</button>
           <button id="info-open" class="btn btn--ghost" type="button">Physics Reference</button>
         </div>
       </header>
@@ -99,9 +100,9 @@
             class="slider"
             type="range"
             min="0"
-            max="100"
+            max="90"
             step="1"
-            value="100"
+            value="50"
             aria-describedby="time-scale-hint"
           />
           <div class="slider__scale" aria-hidden="true">

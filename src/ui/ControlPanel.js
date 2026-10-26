@@ -30,8 +30,13 @@ const superscript = (n) => String(n).split('').map((c) => SUPERSCRIPT[c] ?? c).j
 /** Time scale as "0.25×" or "3.2 × 10⁻⁵×". */
 export function formatScale(scale) {
   if (scale >= 0.01) return `${scale.toFixed(scale >= 0.995 ? 2 : 3)}×`;
-  const exp = Math.floor(Math.log10(scale));
-  const mantissa = scale / 10 ** exp;
+  let exp = Math.floor(Math.log10(scale));
+  let mantissa = scale / 10 ** exp;
+  // Rounding can leave a value like 9.9999… × 10⁻⁵; normalize it to 1.0 × 10⁻⁴.
+  if (mantissa >= 9.95) {
+    mantissa /= 10;
+    exp += 1;
+  }
   const m = mantissa.toFixed(1);
   return m === '1.0' ? `10${superscript(exp)}×` : `${m} × 10${superscript(exp)}×`;
 }

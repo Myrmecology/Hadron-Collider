@@ -3,11 +3,17 @@
  *
  * Three views, with smooth cinematic transitions between them:
  *   ring    overview of the whole collider (free orbit)
- *   follow  chase camera behind Beam 2, scaled to the local tube size
+ *   follow  chase camera locked behind Beam 2, scaled to the local tube size
  *   ip      the detector at IP1 (free orbit around the collision point)
  *
- * Transitions interpolate the orbit target linearly and the camera distance
- * logarithmically, so kilometre-scale zooms read as steady, even motion.
+ * Mode transitions interpolate the orbit target linearly and the camera
+ * distance logarithmically, so kilometre-scale zooms read as steady motion.
+ *
+ * FOLLOW MODE
+ *   The camera is rigidly attached to the bunch (exact at any speed). On entry,
+ *   the offset between the camera's starting pose and the chase pose decays
+ *   exponentially, so the camera glides in instead of snapping, even when the
+ *   bunch moves hundreds of metres per frame.
  */
 import * as THREE from 'three';
 import { RENDER } from '../config/constants.js';
@@ -20,9 +26,10 @@ export const CAMERA_VIEW = Object.freeze({
   IP: 'ip',
 });
 
-const TRANSITION_DURATION = 2.0; // wall-clock seconds
-const FOLLOW_SMOOTHING = 0.12; // time constant (s) for chase-camera easing
-const FOLLOW_MAX_STEP = 400; // m per frame; faster beams switch to the approach view
+const TRANSITION_DURATION = 2.0; // wall-clock seconds for mode tweens
+const APPROACH_SMOOTHING = 0.12; // easing time constant for the approach view (s)
+const FOLLOW_SETTLE = 0.5; // decay time constant of the entry offset (s)
+const FOLLOW_MAX_STEP = 3000; // m per frame; faster beams use the approach view
 
 /** Follow-camera offsets at full exaggeration (m); scaled down near the IP. */
 const FOLLOW_BACK = 60;
@@ -38,11 +45,15 @@ export class CameraDirector {
   #mode = CAMERA_VIEW.RING;
   #listeners = new Set();
 
-  /** Active transition, or null. */
+  /** Active mode transition, or null. */
   #tween = null;
 
   #lastHead = new THREE.Vector3();
   #hasLastHead = false;
+
+  /** Residual offsets that fade out after entering follow mode (null = not yet set). */
+  #residualPosition = null;
+  #residualTarget = null;
 
   /**
    * @param {THREE.PerspectiveCamera} camera
@@ -108,10 +119,12 @@ export class CameraDirector {
     const changed = mode !== this.#mode;
     this.#mode = mode;
     this.#hasLastHead = false;
+    this.#residualPosition = null;
+    this.#residualTarget = null;
 
     if (mode === CAMERA_VIEW.RING) this.#startTween(this.#ringView());
     else if (mode === CAMERA_VIEW.IP) this.#startTween(this.#ipView());
-    else this.#tween = null; // follow mode eases continuously on its own
+    else this.#tween = null; // follow mode blends in on its own
 
     this.#controls.enabled = mode !== CAMERA_VIEW.FOLLOW;
 
@@ -188,13 +201,15 @@ export class CameraDirector {
     this.#lastHead.copy(head);
     this.#hasLastHead = true;
 
-    // Too fast to follow: hold a steady approach view into IP1.
+    // Too fast to follow (e.g. 1×, ~180 laps per frame): hold the approach view.
     if (jump > FOLLOW_MAX_STEP) {
+      this.#residualPosition = null;
+      this.#residualTarget = null;
       this.#ease(this.#approachView(), wallDt);
       return;
     }
 
-    // Chase offsets scale with the drawn tube size (true scale near the IP).
+    // Chase pose; offsets scale with the drawn tube size (true scale near the IP).
     const k = Math.max(0.025, exaggerationAt(beam.s) / RENDER.TRANSVERSE_EXAGGERATION);
     const f = MagnetLattice.frameAt(beam.s);
     const forward = new THREE.Vector3(f.tangent.x, 0, f.tangent.z).multiplyScalar(beam.direction);
@@ -207,12 +222,25 @@ export class CameraDirector {
       .add(new THREE.Vector3(0, FOLLOW_UP * k, 0));
     const target = head.clone().addScaledVector(forward, FOLLOW_AHEAD * k);
 
-    this.#ease({ position, target }, wallDt);
+    // On entry, remember how far the camera is from the chase pose.
+    if (!this.#residualPosition) {
+      this.#residualPosition = this.#camera.position.clone().sub(position);
+      this.#residualTarget = this.#controls.target.clone().sub(target);
+    }
+
+    // Fade the entry offset out; the camera stays locked to the moving bunch.
+    const decay = Math.exp(-wallDt / FOLLOW_SETTLE);
+    this.#residualPosition.multiplyScalar(decay);
+    this.#residualTarget.multiplyScalar(decay);
+
+    this.#camera.position.copy(position).add(this.#residualPosition);
+    this.#controls.target.copy(target).add(this.#residualTarget);
+    this.#camera.lookAt(this.#controls.target);
   }
 
-  /** Frame-rate-independent exponential easing toward a view. */
+  /** Frame-rate-independent exponential easing toward a fixed view. */
   #ease(view, wallDt) {
-    const a = 1 - Math.exp(-wallDt / FOLLOW_SMOOTHING);
+    const a = 1 - Math.exp(-wallDt / APPROACH_SMOOTHING);
     this.#camera.position.lerp(view.position, a);
     this.#controls.target.lerp(view.target, a);
     this.#camera.lookAt(this.#controls.target);
